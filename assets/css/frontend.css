@@ -1,0 +1,42 @@
+
+#wpbody-content {
+  display: flex;
+  flex-direction: column;
+  margin: 2rem 0 0 2rem;
+}
+
+h2 {
+  font-size: 2rem;
+  text-decoration: underline;
+}
+
+.opening-times {
+  display: grid;
+  grid-template-columns: 120px 300px;
+  gap: 0.5rem 1rem;
+  font-size: 1.3rem;
+  align-items: start; /* Damit die Zeiten oben anliegen */
+}
+
+.day-row {
+  display: contents; /* Wrapper auflösen, damit .day und .times Grid-Kinder sind */
+}
+
+.day {
+  grid-column: 1;
+  font-weight: bold;
+  padding-top: 0.2rem; /* Optional: etwas Abstand nach oben */
+}
+
+.times {
+  grid-column: 2;
+  display: block; /* Standard-Block-Layout */
+}
+
+.time {
+  margin-bottom: 0.3rem; /* Abstand zwischen einzelnen Zeiten */
+}
+
+.times.closed {
+  color: red;
+}

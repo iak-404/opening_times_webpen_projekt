@@ -1,0 +1,21 @@
+{
+  "name": "opening_times_webpen_projekt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "gulp": "^5.0.1",
+    "gulp-sass": "^6.0.1",
+    "sass": "^1.90.0"
+  },
+  "dependencies": {
+    "fullcalendar": "^6.1.18"
+  }
+}

@@ -1,0 +1,101 @@
+/* Opening Times Overview Admin */
+
+#wpbody-content {
+  display: flex;
+  flex-direction: column;
+  margin: 2rem 0 0 2rem;
+}
+
+h2 {
+  font-size: 2rem;
+  text-decoration: underline;
+}
+
+.opening-times {
+  display: grid !important;
+  grid-template-columns: 120px 300px;
+  gap: 0.5rem 1rem;
+  font-size: 1.3rem;
+}
+
+.day-row {
+  display: contents; /* Wrapper auflösen, damit .day und .times Grid-Kinder sind */
+}
+
+.daydate {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  grid-column: 1;
+  gap: 0.5rem;
+}
+
+.day {
+  font-weight: bold;
+}
+
+.times {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  grid-column: 2;
+  gap: 0.5rem;
+}
+
+.time {
+}
+
+.times.closed {
+  color: red;
+}
+
+/* Create New Set */
+
+.times_create_form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+  margin: 2rem 0 0 2rem;
+}
+
+.input_set_name{
+  text-align: center;
+  width: 100%;
+  margin: 0.2rem 0 0.4rem 0;
+}
+
+.wrapper_days {
+  display: flex;
+}
+
+.days {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+  gap: 0.4rem;
+}
+
+.new_row {
+  margin-bottom: 0.4rem;
+}
+
+.time_row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.times_create_submit_button{
+  width: 20%;
+  margin-top: 0.4rem;
+}
+
+/* Calendar */
+
+div .fc .admin-calendar {
+  width: 50% !important;
+}
