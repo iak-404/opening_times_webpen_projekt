@@ -1,0 +1,124 @@
+#wpcontent,
+#wpbody-content {
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  margin-left: 1rem;
+}
+
+/* Whole Side */
+.create-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 0;
+}
+
+/* Select Set */
+#setForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+#setForm select {
+  text-align: center;
+}
+
+/* Form */
+input[type="time"]::-webkit-datetime-edit {
+  text-align: center;
+}
+
+input {
+  width: 100px;
+}
+
+input[type="text"] {
+  width: 300px;
+  text-align: center;
+}
+
+.times_submit_button {
+  width: 100px;
+}
+
+button{
+  width: 100px;
+}
+
+/* Create Set */
+.times_create_form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  gap: 0.4rem;
+}
+
+.set_name_input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+
+.wrapper_days {
+  display: flex;
+  flex-direction: row; /* <-- Hinzugefügt */
+  justify-content: center;
+  width: 100%;
+  margin-left: 2rem;
+  gap: 0.2rem;
+}
+
+.days {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+.time_row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  text-align: center;
+}
+
+.button_list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* Edit / Delete Set */
+
+.times_edit_form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  gap: 0.4rem;
+}
+
+.checkbox_list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+}
+
+input[type="checkbox"] {
+  margin:0;
+  margin-right: 0.5rem;
+}

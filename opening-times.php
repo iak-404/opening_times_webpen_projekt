@@ -39,6 +39,26 @@ final class Opening_Times
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_enqueue_scripts', [$this, 'myplugin_enqueue_styles']);
+        add_action('admin_enqueue_scripts', function ($hook) {
+            if (isset($_GET['page']) && $_GET['page'] === 'opening-times-create') {
+                wp_enqueue_style(
+                    'create-css',
+                    plugin_dir_url(__FILE__) . 'assets/css/create.css',
+                    [],
+                    '1.0.3',
+                    'all'
+                );
+                wp_dequeue_style('opening-times-admin');
+            }
+
+            if ($hook === 'toplevel_page_overview') { // nur auf Übersicht-Seite
+                wp_enqueue_script('overview-js', plugin_dir_url(__FILE__) . 'assets/js/overview.js', ['jquery'], '1.0.0', true);
+                wp_localize_script('overview-js', 'MyAjax', [
+                    'ajaxurl' => admin_url('admin-ajax.php'),
+                    'nonce' => wp_create_nonce('my_nonce')
+                ]);
+            }
+        });
 
     }
 
@@ -192,7 +212,7 @@ final class Opening_Times
             'create',
             plugin_dir_url(__FILE__) . 'assets/js/create.js',
             [],
-            '1.0',
+            '1.0.1',
             true
         );
 
@@ -206,7 +226,7 @@ final class Opening_Times
             'myplugin-style',
             plugin_dir_url(__FILE__) . 'assets/css/frontend.css',
             [],
-            '1.0.0',
+            '1.0.1',
             'all'
         );
     }

@@ -26,23 +26,32 @@ if ($selectedSet !== '') {
     </select>
 </form>
 
-<div id="opening-times-output">
-    <?php
-    if (is_array($openingTimes) && count($openingTimes) > 0) {
-        foreach ($openingTimes as $day => $times) {
-            echo '<strong>' . htmlspecialchars($day) . ':</strong><br>';
+<div id="opening-times-output"></div>
 
-            foreach ($times as $time) {
-                if ($time['open_time'] === '00:00' && $time['close_time'] === '00:00') {
-                    echo 'Geschlossen<br>';
-                } else {
-                    echo htmlspecialchars($time['open_time']) . ' - ' . htmlspecialchars($time['close_time']) . '<br>';
-                }
+
+    <h2>Opening Times: </h2>
+    <div class="ot_wrapper">
+        <div id="opening-times" class="opening-times">
+            <?php
+            if (is_array($openingTimes) && count($openingTimes) > 0) {
+                foreach ($openingTimes as $day => $times) { ?>
+
+                    <div class="daydate">
+                        <div class="day"><?php echo $day ?></div>
+                    </div>
+                    <div class="times">
+                        <?php foreach ($times as $time) { ?>
+                            <div class="time"><input type="time" value="<?php echo $time['open_time'] ?>" name=""></div>
+                            <div class="time"><input type="time" value="<?php echo $time['close_time'] ?>" name=""></div>
+                        <?php } ?>
+                    </div>
+                    
+                <!-- </div>
+            </div>
+        </div> -->
+
+    <?php }
+            } elseif ($selectedSet !== '') {
+                echo 'Keine Öffnungszeiten gefunden.';
             }
-            echo '<br>';
-        }
-    } elseif ($selectedSet !== '') {
-        echo 'Keine Öffnungszeiten gefunden.';
-    }
-    ?>
-</div>
+                ?>
