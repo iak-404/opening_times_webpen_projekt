@@ -32,6 +32,7 @@ function ot_create_table($set_name)
 }
 
 // Save Opening Times 
+// Save Opening Times (pro Tag closed, pro Zeitreihe Einträge)
 function ot_save_opening_times($set_name, $opening_times)
 {
     global $wpdb;
@@ -39,40 +40,57 @@ function ot_save_opening_times($set_name, $opening_times)
     $set_name_sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', strtolower($set_name));
     $table_name = 'ot_' . $set_name_sanitized;
 
-    foreach ($opening_times as $day => $rows) {
-        foreach ($rows as $times) {
-            $open = $times['open_time'] ?? null;
-            $close = $times['close_time'] ?? null;
+    foreach ((array) $opening_times as $day => $data) {
+        $day_sanitized = sanitize_text_field($day);
+        $closed = !empty($data['closed']) ? 1 : 0;
+        $times = is_array($data['times'] ?? null) ? $data['times'] : [];
 
-            if ($open) {
-                $open = substr($open, 0, 5) . ':00';
+        if ($closed) {
+            // Tag ist geschlossen: eine Marker-Zeile, Zeiten NULL
+            $wpdb->insert(
+                $table_name,
+                [
+                    'day' => $day_sanitized,
+                    'open_time' => null,
+                    'close_time' => null,
+                    'closed' => 1,
+                ],
+                ['%s', 'NULL', 'NULL', '%d']
+            );
+            continue;
+        }
+
+        // Tag ist offen: nur valide Zeitpaare speichern
+        foreach ($times as $t) {
+            $open = isset($t['open_time']) ? trim($t['open_time']) : '';
+            $close = isset($t['close_time']) ? trim($t['close_time']) : '';
+            if ($open === '' && $close === '') {
+                continue;
             }
-            if ($close) {
-                $close = substr($close, 0, 5) . ':00';
-            }
+
+            // Normalisiere "HH:MM" → "HH:MM:00"
+            $open = $open ? substr($open, 0, 5) . ':00' : null;
+            $close = $close ? substr($close, 0, 5) . ':00' : null;
 
             $wpdb->insert(
                 $table_name,
                 [
-                    'day' => $day,
+                    'day' => $day_sanitized,
                     'open_time' => $open,
                     'close_time' => $close,
-                    'closed' => $times['closed'] ?? 0,
+                    'closed' => 0,
                 ],
-                [
-                    '%s',
-                    '%s',
-                    '%s',
-                    '%d',
-                ]
+                ['%s', '%s', '%s', '%d']
             );
         }
     }
 }
 
 
+
 // Update Opening Times
 
+// Update Opening Times (einfach löschen & neu einfügen)
 function update_opening_times($set_name, $opening_times)
 {
     global $wpdb;
@@ -80,34 +98,13 @@ function update_opening_times($set_name, $opening_times)
     $set_name_sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', strtolower($set_name));
     $table_name = 'ot_' . $set_name_sanitized;
 
-    // Alte Zeiten löschen (Alternative: UPDATE nutzen, aber hier einfacher)
+    // Vorherige Einträge entfernen
     $wpdb->query("DELETE FROM {$table_name}");
 
-    foreach ($opening_times as $day => $rows) {
-        foreach ($rows as $times) {
-            $open = $times['open_time'] ?? null;
-            $close = $times['close_time'] ?? null;
-
-            if ($open) {
-                $open = substr($open, 0, 5) . ':00';
-            }
-            if ($close) {
-                $close = substr($close, 0, 5) . ':00';
-            }
-
-            $wpdb->insert(
-                $table_name,
-                [
-                    'day' => $day,
-                    'open_time' => $open,
-                    'close_time' => $close,
-                    'closed' => $times['closed'] ?? 0,
-                ],
-                ['%s', '%s', '%s', '%d']
-            );
-        }
-    }
+    // Dann wie beim Save neu einfügen
+    ot_save_opening_times($set_name, $opening_times);
 }
+
 
 function delete_set($set_name)
 {
@@ -122,7 +119,7 @@ function delete_set($set_name)
     // Option entfernen, falls vorhanden
     delete_option('ot_absence');
 }
-    
+
 
 
 // Get all saved Sets
@@ -146,6 +143,7 @@ function get_all_sets()
 
 // Get the saved opening Times from the chosen Set
 
+// Get the saved opening Times (aggregiert zu ['closed'=>0|1, 'times'=>[]])
 function get_opening_times($set_name)
 {
     global $wpdb;
@@ -159,25 +157,50 @@ function get_opening_times($set_name)
         return [];
     }
 
+    // closed mitladen!
     $results = $wpdb->get_results(
-        "SELECT day, DATE_FORMAT(open_time, '%H:%i') AS open_time, DATE_FORMAT(close_time, '%H:%i') AS close_time FROM $table_name ORDER BY id ASC",
+        "SELECT day,
+                closed,
+                DATE_FORMAT(open_time,  '%H:%i') AS open_time,
+                DATE_FORMAT(close_time, '%H:%i') AS close_time
+         FROM {$table_name}
+         ORDER BY id ASC",
         ARRAY_A
     );
 
     $opening_times = [];
-    foreach ($results as $row) {
+    foreach ((array) $results as $row) {
         $day = $row['day'];
+
         if (!isset($opening_times[$day])) {
-            $opening_times[$day] = [];
+            $opening_times[$day] = ['closed' => 0, 'times' => []];
         }
-        $opening_times[$day][] = [
-            'open_time' => $row['open_time'],
-            'close_time' => $row['close_time'],
-            'closed' => $row['closed'] ?? 0,
-        ];
+
+        // Wenn eine Zeile "closed=1" existiert → Tag ist geschlossen, Zeiten ignorieren
+        if (!empty($row['closed'])) {
+            $opening_times[$day]['closed'] = 1;
+            // Wir setzen times auf leeres Array – Marker genügt
+            $opening_times[$day]['times'] = [];
+            continue;
+        }
+
+        // Nur Zeitreihe anhängen, wenn Tag nicht als geschlossen markiert ist
+        if (!$opening_times[$day]['closed']) {
+            // Leere Werte filtern
+            $open = $row['open_time'] ?: '';
+            $close = $row['close_time'] ?: '';
+            if ($open !== '' || $close !== '') {
+                $opening_times[$day]['times'][] = [
+                    'open_time' => $open,
+                    'close_time' => $close,
+                ];
+            }
+        }
     }
+
     return $opening_times;
 }
+
 
 function get_all_absences()
 {

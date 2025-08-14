@@ -71,29 +71,33 @@ $days = [
                     <input class="input_set_name" type="text" name="set_name" placeholder="Please enter a Setname" required>
                 </div>
                 <div class="wrapper_days">
-                    <?php
-                    foreach ($days as $key => $label) {
+                    
+                    <?php foreach ($days as $key => $label) { ?>
+                    <div class='days'>
+                        <label><?php echo $label; ?></label>
+
+                        <?php
+                        $dayKey = $key;         
+                        $closedForDay = 0;        
                         ?>
-                        <div class='days'>
-                            <label><?php echo $label ?> </label>
-                            <div class="checkbox_list">
-                                <input id="closed_<?php echo $day . '_' . $idx ?>" type="checkbox"
-                                    name="opening_times[<?php echo $day ?>][<?php echo $idx ?>][closed]" value="1" <?php echo (!empty($interval['closed']) ? 'checked' : '') ?>>
-                                <label for="closed_<?php echo $day . '_' . $idx ?>" class="closed_checkbox">Closed</label>
-                            </div>
-                            <div class="time_row" data-day="<?php echo $key ?>">
-                                <input class="time_input" type='time' name='opening_times[<?php echo $key ?>][0][open_time]'>
-                                <input class="time_input" type='time' name='opening_times[<?php echo $key ?>][0][close_time]'>
-                            </div>
-                            <span class='new_time_row' data-day='<?php echo $key ?>'></span>
-                            <div class="button_list">
-                                <button type='button' class='add_row' data-day='<?php echo $key ?>'>Add Time</button>
-                                <button type='button' class='delete_row' data-day='<?php echo $key ?>'>Delete Time</button>
-                            </div>
+                        <input type="hidden" name="opening_times[<?php echo esc_attr($dayKey); ?>][closed]" value="0">
+                        <input id="closed_<?php echo esc_attr($dayKey); ?>" type="checkbox"
+                            name="opening_times[<?php echo esc_attr($dayKey); ?>][closed]" value="1"
+                            <?php checked($closedForDay, 1); ?>>
+                        <label for="closed_<?php echo esc_attr($dayKey); ?>" class="closed_checkbox">Closed</label>
+
+                        <div class="time_row" data-day="<?php echo esc_attr($key); ?>">
+                        <input class="time_input" type='time' name='opening_times[<?php echo esc_attr($key); ?>][times][0][open_time]'>
+                        <input class="time_input" type='time' name='opening_times[<?php echo esc_attr($key); ?>][times][0][close_time]'>
                         </div>
-                    <?php
-                    }
-                    ?>
+                        <span class='new_time_row' data-day='<?php echo esc_attr($key); ?>'></span>
+                        <div class="button_list">
+                        <button type='button' class='add_row' data-day='<?php echo esc_attr($key); ?>'>Add Time</button>
+                        <button type='button' class='delete_row' data-day='<?php echo esc_attr($key); ?>'>Delete Time</button>
+                        </div>
+                    </div>
+                    <?php } ?>
+
                 </div>
                 <button class="times_submit_button" type="submit">Submit</button>
             </form>
@@ -110,40 +114,46 @@ $days = [
                     </div>
                 </div>
                 <div class="wrapper_days">
-                <?php foreach ($openingTimes as $day => $intervals) { ?>
-                        <div class='days'>
-                            <label><?php echo $day ?></label>
-                            <div class="checkbox_list">
-                                <div class="checkbox"><input id="closed" type="checkbox"
-                                        name="opening_times[<?php echo $key ?>]['closed']"><label for="closed"
-                                        class="closed_checkbox">Closed</label></div>
-                            </div>
-                        <?php $idx = 0;
-                        foreach ($intervals as $interval) { ?>
-                                <div class="time_row" data-day='<?php echo $day ?>'>
-                                    <input type='time' value="<?php echo htmlspecialchars($interval['open_time'] ?? ''); ?>"
-                                        name='opening_times[<?php echo $day ?>][<?php echo $idx ?>][open_time]'>
-                                    <input type='time' value="<?php echo htmlspecialchars($interval['close_time'] ?? ''); ?>"
-                                        name='opening_times[<?php echo $day ?>][<?php echo $idx ?>][close_time]'>
-                                </div>
-                            <?php $idx++;
-                        } ?>
-                            <span class='new_time_row' data-day='<?php echo $day ?>'></span>
-                            <div class="button_list">
-                                <button type='button' class='add_row' data-day='<?php echo $day ?>'>Add Time</button>
-                                <button type='button' class='edit_delete_row' data-day='<?php echo $day ?>'>Delete Time</button>
-                            </div>
-                        </div>
-                <?php }
-                ?>
+<?php foreach ($days as $key => $label): ?>
+  <?php
+    $dayKey = $key; 
+    $dayData = $openingTimes[$dayKey] ?? ['closed' => 0, 'times' => []];
+    $closedForDay = (int)!empty($dayData['closed']);
+    $times = is_array($dayData['times'] ?? null) ? $dayData['times'] : [];
+    if (empty($times)) { $times = [[]]; }
+  ?>
+  <div class='days'>
+    <label><?php echo esc_html($label); ?></label>
+
+    <input type="hidden" name="opening_times[<?php echo esc_attr($dayKey); ?>][closed]" value="0">
+    <input id="closed_<?php echo esc_attr($dayKey); ?>" type="checkbox"
+           name="opening_times[<?php echo esc_attr($dayKey); ?>][closed]" value="1"
+           <?php checked($closedForDay, 1); ?>>
+    <label for="closed_<?php echo esc_attr($dayKey); ?>" class="closed_checkbox">Closed</label>
+
+    <?php foreach ($times as $i => $interval): 
+      $open  = isset($interval['open_time'])  ? esc_attr($interval['open_time'])  : '';
+      $close = isset($interval['close_time']) ? esc_attr($interval['close_time']) : '';
+    ?>
+      <div class="time_row" data-day='<?php echo esc_attr($dayKey); ?>'>
+        <input type='time' value="<?php echo $open; ?>"
+               name='opening_times[<?php echo esc_attr($dayKey); ?>][times][<?php echo (int)$i; ?>][open_time]'>
+        <input type='time' value="<?php echo $close; ?>"
+               name='opening_times[<?php echo esc_attr($dayKey); ?>][times][<?php echo (int)$i; ?>][close_time]'>
+      </div>
+    <?php endforeach; ?>
+
+    <span class='new_time_row' data-day='<?php echo esc_attr($dayKey); ?>'></span>
+    <div class="button_list">
+      <button type='button' class='add_row' data-day='<?php echo esc_attr($dayKey); ?>'>Add Time</button>
+      <button type='button' class='edit_delete_row' data-day='<?php echo esc_attr($dayKey); ?>'>Delete Time</button>
+    </div>
+  </div>
+<?php endforeach; ?>
+
                 </div>
                 <button class="times_submit_button" type="submit">Submit</button>
             </form>
     <?php } ?>
 </div>
-<?php
-
-
-
-
-
+<?php ?>

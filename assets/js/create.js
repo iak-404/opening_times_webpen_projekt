@@ -41,4 +41,6 @@ document.addEventListener("click", function (e) {
       timeRows[timeRows.length - 1].remove();
     }
   }
+
+  
 });
