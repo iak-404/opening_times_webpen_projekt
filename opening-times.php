@@ -16,7 +16,7 @@ if (!defined('ABSPATH'))
 require_once plugin_dir_path(__FILE__) . 'inc/db.php';
 require_once plugin_dir_path(__FILE__) . 'inc/admin-ajax.php';
 require_once plugin_dir_path(__FILE__) . 'inc/functions.php';
-
+require_once plugin_dir_path(__FILE__) . 'inc/time_logic.php';
 
 final class Opening_Times
 {
@@ -39,6 +39,7 @@ final class Opening_Times
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_enqueue_scripts', [$this, 'myplugin_enqueue_styles']);
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_scripts']);
         add_action('admin_enqueue_scripts', function ($hook) {
             if (isset($_GET['page']) && $_GET['page'] === 'opening-times-create') {
                 wp_enqueue_style(
@@ -217,6 +218,17 @@ final class Opening_Times
         );
 
 
+    }
+
+    public function enqueue_frontend_scripts()
+    {
+        wp_enqueue_script(
+            'ot-tz-cookie',
+            plugin_dir_url(__FILE__) . 'assets/js/tz-cookie.js',
+            [],        // keine Abhängigkeiten
+            '1.0.0',
+            true       // im Footer
+        );
     }
 
 

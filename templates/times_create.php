@@ -26,12 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/* ==============================
-   Load sets and current selection
-   ============================== */
 $sets         = get_all_sets();
 $selectedSet  = $_POST['select_set'] ?? '';
 $openingTimes = [];
+$dates = get_all_absences();
+$vactaion = vacation_difference($dates[0]['start'] ?? '', $dates[0]['end'] ?? '');
+
 
 if ($selectedSet !== '') {
     $openingTimes = get_opening_times($selectedSet);
