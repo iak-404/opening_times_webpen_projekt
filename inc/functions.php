@@ -24,13 +24,10 @@ function load_opening_times_callback()
         wp_die();
     }
 
-    // Urlaubstage vorbereiten
     $vacation_lookup = ot_build_vacation_lookup();
 
-    // Store-TZ (Server/WordPress)
     $tz_store = function_exists('wp_timezone') ? wp_timezone() : new DateTimeZone('Europe/Berlin');
 
-    // View-TZ (vom Client übergeben, Cookie, GET oder POST)
     $tz_view = $tz_store;
     $tz_candidate = null;
 
@@ -58,7 +55,6 @@ function load_opening_times_callback()
     $weekdayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     $weekdayIndex = array_flip($weekdayOrder);
 
-    // HTML-Ausgabe
     ?>
     <h2>Opening Times:</h2>
     <div class="ot_wrapper">
@@ -102,7 +98,6 @@ function load_opening_times_callback()
                                     continue;
                                 }
 
-                                // Über Mitternacht
                                 if ($close_store <= $open_store) {
                                     $close_store = $close_store->modify('+1 day');
                                 }
@@ -126,7 +121,6 @@ function load_opening_times_callback()
 }
 
 
-// functions.php oder Plugin:
 
 add_shortcode('opening_times', function ($atts) {
     $atts = shortcode_atts([
@@ -158,8 +152,6 @@ if (!function_exists('ot_fmt_duration')) {
     }
 }
 
-// Shortcode [tl set="webpen"]  (set_name wird weiterhin akzeptiert)
-// Optional: [tl set="webpen" tz="Europe/Berlin"]
 function ot_render_today_status(string $set, DateTimeZone $tz_store, DateTimeZone $tz_view, $vacation_lookup = null): string
 {
     $ot = get_opening_times($set);
@@ -167,7 +159,6 @@ function ot_render_today_status(string $set, DateTimeZone $tz_store, DateTimeZon
         return '<div class="test">Keine Daten für ' . esc_html($set) . '</div>';
     }
 
-    // optional Urlaub berücksichtigen
     $now_view = new DateTimeImmutable('now', $tz_view);
     $now_store = $now_view->setTimezone($tz_store);
     $dayKey = $now_store->format('l');
@@ -234,18 +225,14 @@ add_shortcode('tl', function ($atts) {
 });
 
 
-
-// Vacation 
-
 function vacation_difference($start, $end)
 {
     $start_date = new DateTime($start);
     $end_date = new DateTime($end);
 
-    // Enddatum einen Tag weiter setzen, weil DatePeriod das Enddatum ausschließt
     $end_date->modify('+1 day');
 
-    $interval = new DateInterval('P1D'); // Schrittweite = 1 Tag
+    $interval = new DateInterval('P1D');
     $period = new DatePeriod($start_date, $interval, $end_date);
 
     $days = [];
