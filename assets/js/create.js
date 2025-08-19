@@ -1,17 +1,34 @@
-document.addEventListener("click", function (e) {
-  if (e.target.classList.contains("add_row")) {
+document.addEventListener('click', (e) => {
+  // ---------- ZEILE HINZUFÜGEN (Create & Edit) ----------
+  const addBtn = e.target.closest('.add_row');
+  if (addBtn) {
     e.preventDefault();
-    const key = e.target.dataset.day;
-    const new_row = document.querySelector(`.new_time_row[data-day="${key}"]`);
-    const index = new_row.querySelectorAll(".new_time_row").length + 1;
 
-    new_row.insertAdjacentHTML(
-      "beforeend",
-      `<div class="time_row">
-         <input type='time' style="width:100px" name='opening_times[${key}][${index}][open_time]'>
-         <input type='time' style="width:100px" name='opening_times[${key}][${index}][close_time]'>
-       </div>`
-    );
+    const dayKey  = addBtn.dataset.day;                  // z.B. "Monday"
+    const daysBox = addBtn.closest('.days');             // Container dieses Tages
+    if (!daysBox) return;
+
+    // Nächsten Index aus data-next-index holen (Create: startet bei 1, Edit: bei count($times))
+    let idx = parseInt(daysBox.dataset.nextIndex || '1', 10);
+
+    // Anker: <span class="new_time_row" data-day="...">
+    const anchor = daysBox.querySelector(`.new_time_row[data-day="${dayKey}"]`);
+    if (!anchor) return;
+
+    // Wichtig: [times][idx][open_time] / [close_time] + data-day am Row-Wrapper
+    const rowHtml = `
+      <div class="time_row" data-day="${dayKey}">
+        <input class="time_input" type="time" style="width:100px"
+               name="opening_times[${dayKey}][times][${idx}][open_time]">
+        <input class="time_input" type="time" style="width:100px"
+               name="opening_times[${dayKey}][times][${idx}][close_time]">
+      </div>
+    `;
+    anchor.insertAdjacentHTML('beforebegin', rowHtml);
+
+    // Index hochzählen
+    daysBox.dataset.nextIndex = String(idx + 1);
+    return;
   }
 
   if (e.target.classList.contains("edit_delete_row")) {

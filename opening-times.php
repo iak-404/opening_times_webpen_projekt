@@ -16,10 +16,18 @@ if (!defined('ABSPATH'))
 require_once plugin_dir_path(__FILE__) . 'inc/db.php';
 require_once plugin_dir_path(__FILE__) . 'inc/admin-ajax.php';
 require_once plugin_dir_path(__FILE__) . 'inc/functions.php';
-require_once plugin_dir_path(__FILE__) . 'inc/time_logic.php';
 
 final class Opening_Times
 {
+
+    public static function activate()
+    {
+        foreach (['administrator', 'editor'] as $role_name) {
+            if ($role = get_role($role_name)) {
+                $role->add_cap('manage_opening_times');
+            }
+        }
+    }
 
     private static $instance = null;
 
@@ -36,6 +44,7 @@ final class Opening_Times
     {
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('admin_menu', [$this, 'register_admin_menu']);
+        add_action('admin_menu', [$this, 'register_settings_submenu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_enqueue_scripts', [$this, 'myplugin_enqueue_styles']);
@@ -52,7 +61,7 @@ final class Opening_Times
                 wp_dequeue_style('opening-times-admin');
             }
 
-            if ($hook === 'toplevel_page_overview') { 
+            if ($hook === 'toplevel_page_overview') {
                 wp_enqueue_script('overview-js', plugin_dir_url(__FILE__) . 'assets/js/overview.js', ['jquery'], '1.0.0', true);
                 wp_localize_script('overview-js', 'MyAjax', [
                     'ajaxurl' => admin_url('admin-ajax.php'),
@@ -60,7 +69,29 @@ final class Opening_Times
                 ]);
             }
         });
+        add_action('admin_init', function () {
+            foreach (['administrator', 'editor'] as $role_name) {
+                if ($role = get_role($role_name)) {
+                    if (!$role->has_cap('manage_opening_times')) {
+                        $role->add_cap('manage_opening_times');
+                    }
+                }
+            }
+        });
 
+    }
+
+    public function register_settings_submenu()
+    {
+        add_submenu_page(
+            'options-general.php',
+            __('Opening Times – Einstellungen', 'opening-times'),
+            __('Opening Times', 'opening-times'),
+            'manage_opening_times',
+            'opening-times-settings',
+            [$this, 'render_settings_page'],
+            3
+        );
     }
 
     public function load_textdomain()
@@ -73,7 +104,7 @@ final class Opening_Times
         add_menu_page(
             __('Opening Times', 'opening-times'),
             __('Opening Times', 'opening-times'),
-            'manage_options',
+            'manage_opening_times',
             'opening-times',
             [$this, 'render_overview_page'],
             'dashicons-clock',
@@ -84,7 +115,7 @@ final class Opening_Times
             'opening-times',
             __('Overview', 'opening-times'),
             __('Overview', 'opening-times'),
-            'manage_options',
+            'manage_opening_times',
             'opening-times',
             [$this, 'render_overview_page']
         );
@@ -93,7 +124,7 @@ final class Opening_Times
             'opening-times',
             __('Create New Set', 'opening-times'),
             __('Create New Set', 'opening-times'),
-            'manage_options',
+            'manage_opening_times',
             'opening-times-create',
             [$this, 'render_create_page']
         );
@@ -102,18 +133,9 @@ final class Opening_Times
             'opening-times',
             __('Edit', 'opening-times'),
             __('Edit', 'opening-times'),
-            'manage_options',
+            'manage_opening_times',
             'opening-times-edit',
             [$this, 'render_edit_page']
-        );
-
-        add_submenu_page(
-            'opening-times',
-            __('Settings', 'opening-times'),
-            __('Settings', 'opening-times'),
-            'manage_options',
-            'opening-times-settings',
-            [$this, 'render_settings_page']
         );
 
         add_submenu_page(
@@ -182,7 +204,7 @@ final class Opening_Times
         wp_enqueue_script(
             'overview-js',
             plugin_dir_url(__FILE__) . 'assets/js/overview.js',
-            [], 
+            [],
             '1.0.1',
             true
         );
@@ -222,12 +244,21 @@ final class Opening_Times
 
     public function enqueue_frontend_scripts()
     {
+
+        wp_enqueue_style(
+            'opening-times-shortcode',
+            plugin_dir_url(__FILE__) . 'assets/css/shortcode.css',
+            [],
+            '1.0.0',
+            'all'
+        );
+
         wp_enqueue_script(
             'ot-tz-cookie',
             plugin_dir_url(__FILE__) . 'assets/js/tz-cookie.js',
-            [],       
+            [],
             '1.0.0',
-            true 
+            true
         );
 
         wp_enqueue_script(

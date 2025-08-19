@@ -1,0 +1,23 @@
+/* Shortcode for "open till", "closing in" */
+
+.ot-today-auto {
+    font-size: 1.3rem;
+    text-decoration: none;
+}
+
+.loading {
+    font-weight: bold;
+    color: red;
+}
+
+/* Opening Times Shortcode */
+
+.day {
+    padding: 0;
+    margin-bottom: 0.3rem;
+}
+
+.closed {
+    font-weight: bold;
+    color: red;
+}
