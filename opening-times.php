@@ -52,7 +52,7 @@ final class Opening_Times
                 wp_dequeue_style('opening-times-admin');
             }
 
-            if ($hook === 'toplevel_page_overview') { // nur auf Übersicht-Seite
+            if ($hook === 'toplevel_page_overview') { 
                 wp_enqueue_script('overview-js', plugin_dir_url(__FILE__) . 'assets/js/overview.js', ['jquery'], '1.0.0', true);
                 wp_localize_script('overview-js', 'MyAjax', [
                     'ajaxurl' => admin_url('admin-ajax.php'),
@@ -182,17 +182,17 @@ final class Opening_Times
         wp_enqueue_script(
             'overview-js',
             plugin_dir_url(__FILE__) . 'assets/js/overview.js',
-            ['jquery'],
-            '1.0.0',
+            [], 
+            '1.0.1',
             true
         );
 
-        wp_localize_script('overview-js', 'MyAjax', [
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('load_opening_times_nonce')
+        wp_localize_script('overview-js', 'OpeningTimesData', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('load_opening_times_nonce'),
+            'action' => 'load_opening_times',
         ]);
 
-        // Andere Scripte
         wp_enqueue_script(
             'fullcalendar-js',
             plugin_dir_url(__FILE__) . 'assets/js/fullcalendar.min.js',
@@ -225,10 +225,24 @@ final class Opening_Times
         wp_enqueue_script(
             'ot-tz-cookie',
             plugin_dir_url(__FILE__) . 'assets/js/tz-cookie.js',
-            [],        // keine Abhängigkeiten
+            [],       
             '1.0.0',
-            true       // im Footer
+            true 
         );
+
+        wp_enqueue_script(
+            'overview-js',
+            plugin_dir_url(__FILE__) . 'assets/js/overview.js',
+            [],
+            '1.0.0',
+            true
+        );
+
+        wp_localize_script('overview-js', 'OpeningTimesData', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('load_opening_times_nonce'),
+            'action' => 'load_opening_times',
+        ]);
     }
 
 

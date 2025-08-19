@@ -16,9 +16,26 @@ function time_logic($atts)
 
     $ot = get_opening_times($set);
 
-    $tz = function_exists('wp_timezone') ? wp_timezone() : new DateTimeZone('Europe/Berlin');
-    $now = new DateTimeImmutable('now', $tz);
-    $dayKey = $now->format('l'); // Monday/Tuesday/...
+    // Store-TZ (DB gilt hier)
+    $tz_store = function_exists('wp_timezone') ? wp_timezone() : new DateTimeZone('Europe/Berlin');
+
+    // Viewer-TZ (Browser via ?tz= oder Cookie), sonst wie Store
+    $tz_view = $tz_store;
+    $tz_candidate = null;
+    if (!empty($_GET['tz'])) {
+        $tz_candidate = sanitize_text_field(wp_unslash($_GET['tz']));
+    } elseif (!empty($_COOKIE['tz'])) {
+        $tz_candidate = sanitize_text_field(wp_unslash($_COOKIE['tz']));
+    }
+    if ($tz_candidate && in_array($tz_candidate, timezone_identifiers_list(), true)) {
+        $tz_view = new DateTimeZone($tz_candidate);
+    }
+
+    // Jetzt in Viewer-TZ, “heute” (für Tageszeile) in Store-TZ
+    $now_view = new DateTimeImmutable('now', $tz_view);
+    $now_store = $now_view->setTimezone($tz_store);
+    $dayKey = $now_store->format('l'); // Monday/Tuesday/...
+
 
     $today = $ot[$dayKey] ?? null;
 
@@ -46,22 +63,33 @@ function time_logic($atts)
         if ($o === '' || $c === '')
             continue;
 
-        $oT = DateTimeImmutable::createFromFormat('H:i', $o, $tz);
-        $cT = DateTimeImmutable::createFromFormat('H:i', $c, $tz);
-        if (!$oT || !$cT)
+        // Zeiten der DB gelten für HEUTE in Store-TZ
+        $store_date = $now_store->format('Y-m-d');
+        $open_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', $store_date . ' ' . $o, $tz_store);
+        $close_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', $store_date . ' ' . $c, $tz_store);
+        if (!$open_store || !$close_store)
             continue;
 
-        $open = $now->setTime((int) $oT->format('H'), (int) $oT->format('i'));
-        $close = $now->setTime((int) $cT->format('H'), (int) $cT->format('i'));
+        // Über-Mitternacht (z.B. 22:00–02:00)
+        if ($close_store <= $open_store) {
+            $close_store = $close_store->modify('+1 day');
+        }
 
-        if ($now < $open) {
-            $out = '<div class="test">' . $set . ' öffnet in ' . $fmt($open->getTimestamp() - $now->getTimestamp()) . ' um  ' . $o .' Uhr.</div>';
+        // In Viewer-TZ umrechnen
+        $open_view = $open_store->setTimezone($tz_view);
+        $close_view = $close_store->setTimezone($tz_view);
+
+        // Vergleiche & Ausgabe in Viewer-TZ
+        if ($now_view < $open_view) {
+            $out = '<div class="test">' . $set . ' öffnet in ' . $fmt($open_view->getTimestamp() - $now_view->getTimestamp()) . ' um ' . $open_view->format('H:i') . ' Uhr.</div>';
             break;
         }
-        if ($now >= $open && $now < $close) {
-            $out = '<div class="test">' . $set . ' ist offen und schließt in ' . $fmt($close->getTimestamp() - $now->getTimestamp()) . ' um ' . $c .  ' Uhr.</div>';
+        if ($now_view >= $open_view && $now_view < $close_view) {
+            $out = '<div class="test">' . $set . ' ist offen und schließt in ' . $fmt($close_view->getTimestamp() - $now_view->getTimestamp()) . ' um ' . $close_view->format('H:i') . ' Uhr.</div>';
             break;
         }
+
+
     }
 
     // Nichts gepasst → heute geschlossen
@@ -74,4 +102,4 @@ function time_logic($atts)
 }
 
 
-add_shortcode('tl', 'time_logic'); 
+add_shortcode('tl', 'time_logic');
