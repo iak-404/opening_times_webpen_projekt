@@ -16,6 +16,7 @@ if (!defined('ABSPATH'))
 require_once plugin_dir_path(__FILE__) . 'inc/db.php';
 require_once plugin_dir_path(__FILE__) . 'inc/admin-ajax.php';
 require_once plugin_dir_path(__FILE__) . 'inc/functions.php';
+require_once plugin_dir_path(__FILE__) . 'inc/settings.php';
 
 final class Opening_Times
 {

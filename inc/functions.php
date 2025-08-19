@@ -102,8 +102,12 @@ function load_opening_times_callback()
                                     $close_store = $close_store->modify('+1 day');
                                 }
 
-                                $open_view = $open_store->setTimezone($tz_view)->format('H:i');
-                                $close_view = $close_store->setTimezone($tz_view)->format('H:i');
+                                $opts = get_option('ot_settings', []);
+                                $use12h = !empty($opts['time_12h']);
+                                $fmt = $use12h ? 'g:i A' : 'H:i';
+
+                                $open_view = $open_store->setTimezone($tz_view)->format($fmt);
+                                $close_view = $close_store->setTimezone($tz_view)->format($fmt);
 
                                 echo '<div class="time">' . esc_html($open_view . ' - ' . $close_view . ' Uhr') . '</div>';
                             }
@@ -194,16 +198,29 @@ function ot_render_today_status(string $set, DateTimeZone $tz_store, DateTimeZon
         if ($close_store <= $open_store)
             $close_store = $close_store->modify('+1 day');
 
-        $open_view = $open_store->setTimezone($tz_view);
-        $close_view = $close_store->setTimezone($tz_view);
+        $opts = get_option('ot_settings', []);
+        $use12h = !empty($opts['time_12h']);
+        $fmt = $use12h ? 'g:i A' : 'H:i';
+        $suffix = $use12h ? '' : ' Uhr';
 
-        if ($now_view < $open_view) {
-            $diff = $open_view->getTimestamp() - $now_view->getTimestamp();
-            return '<div class="test">' . esc_html($set) . ' öffnet in ' . $fmt($diff) . ' um ' . $open_view->format('H:i') . ' Uhr.</div>';
+        // 1) Erst DateTime-Objekte bauen (in View-TZ)
+        $open_dt = $open_store->setTimezone($tz_view);
+        $close_dt = $close_store->setTimezone($tz_view);
+
+        // 2) Dann String-Repräsentation für die Ausgabe
+        $open_str = $open_dt->format($fmt);
+        $close_str = $close_dt->format($fmt);
+
+        // 3) Vergleiche IMMER mit DateTime-Objekten, nicht mit Strings
+        if ($now_view < $open_dt) {
+            $diff = $open_dt->getTimestamp() - $now_view->getTimestamp();
+            return '<div class="test">' . esc_html($set) . ' öffnet in '
+                . ot_fmt_duration($diff) . ' um ' . $open_str . $suffix . '.</div>';
         }
-        if ($now_view >= $open_view && $now_view < $close_view) {
-            $diff = $close_view->getTimestamp() - $now_view->getTimestamp();
-            return '<div class="test">' . esc_html($set) . ' ist offen und schließt in ' . $fmt($diff) . ' um ' . $close_view->format('H:i') . ' Uhr.</div>';
+        if ($now_view >= $open_dt && $now_view < $close_dt) {
+            $diff = $close_dt->getTimestamp() - $now_view->getTimestamp();
+            return '<div class="test">' . esc_html($set) . ' ist offen und schließt in '
+                . ot_fmt_duration($diff) . ' um ' . $close_str . $suffix . '.</div>';
         }
     }
     return '<div class="test">heute geschlossen</div>';
