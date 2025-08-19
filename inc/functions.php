@@ -46,6 +46,13 @@ function load_opening_times_callback()
         $tz_view = new DateTimeZone($tz_candidate);
     }
 
+    $mode = isset($_POST['mode']) ? sanitize_text_field($_POST['mode']) : 'week';
+
+    if ($mode === 'today') {
+        echo ot_render_today_status($set_name, $tz_store, $tz_view, $vacation_lookup);
+        wp_die();
+    }
+
     $today = new DateTimeImmutable('today', $tz_store);
     $weekStart = (clone $today)->modify('monday this week');
     $weekdayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -123,9 +130,9 @@ function load_opening_times_callback()
 
 add_shortcode('opening_times', function ($atts) {
     $atts = shortcode_atts([
-        'set'           => '',
+        'set' => '',
         'use_client_tz' => '1',
-        'tz'            => '',
+        'tz' => '',
     ], $atts, 'opening_times');
 
     if ($atts['set'] === '') {
@@ -134,14 +141,97 @@ add_shortcode('opening_times', function ($atts) {
 
     $uid = 'ot_' . wp_generate_uuid4();
     ob_start(); ?>
-    <div id="<?php echo esc_attr($uid); ?>" class="opening-times-auto"
-         data-set="<?php echo esc_attr($atts['set']); ?>"
-         data-use-client-tz="<?php echo esc_attr($atts['use_client_tz']); ?>"
-         data-tz="<?php echo esc_attr($atts['tz']); ?>"></div>
+    <div id="<?php echo esc_attr($uid); ?>" class="opening-times-auto" data-set="<?php echo esc_attr($atts['set']); ?>"
+        data-use-client-tz="<?php echo esc_attr($atts['use_client_tz']); ?>" data-tz="<?php echo esc_attr($atts['tz']); ?>">
+    </div>
     <?php
     return ob_get_clean();
 });
 
+if (!function_exists('ot_fmt_duration')) {
+    function ot_fmt_duration(int $seconds): string
+    {
+        $mins = intdiv($seconds, 60);
+        $h = intdiv($mins, 60);
+        $m = $mins % 60;
+        return ($h ? $h . ' Std ' : '') . $m . ' Min';
+    }
+}
+
+// Shortcode [tl set="webpen"]  (set_name wird weiterhin akzeptiert)
+// Optional: [tl set="webpen" tz="Europe/Berlin"]
+function ot_render_today_status(string $set, DateTimeZone $tz_store, DateTimeZone $tz_view, $vacation_lookup = null): string
+{
+    $ot = get_opening_times($set);
+    if (empty($ot) || !is_array($ot)) {
+        return '<div class="test">Keine Daten für ' . esc_html($set) . '</div>';
+    }
+
+    // optional Urlaub berücksichtigen
+    $now_view = new DateTimeImmutable('now', $tz_view);
+    $now_store = $now_view->setTimezone($tz_store);
+    $dayKey = $now_store->format('l');
+    $today = $ot[$dayKey] ?? null;
+
+    $isVacation = false;
+    if ($vacation_lookup && function_exists('ot_is_vacation_day')) {
+        $isVacation = ot_is_vacation_day($now_store->format('Y-m-d'), $vacation_lookup);
+    }
+    if ($isVacation || !$today || !empty($today['closed'])) {
+        return '<div class="test">heute geschlossen</div>';
+    }
+
+    $slots = is_array($today['times'] ?? null) ? $today['times'] : [];
+    $fmt = function (int $seconds): string {
+        $mins = intdiv($seconds, 60);
+        $h = intdiv($mins, 60);
+        $m = $mins % 60;
+        return ($h ? $h . ' Std ' : '') . $m . ' Min';
+    };
+
+    foreach ($slots as $slot) {
+        $o = trim($slot['open_time'] ?? '');
+        $c = trim($slot['close_time'] ?? '');
+        if ($o === '' || $c === '')
+            continue;
+
+        $d = $now_store->format('Y-m-d');
+        $open_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', "$d $o", $tz_store);
+        $close_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', "$d $c", $tz_store);
+        if (!$open_store || !$close_store)
+            continue;
+        if ($close_store <= $open_store)
+            $close_store = $close_store->modify('+1 day');
+
+        $open_view = $open_store->setTimezone($tz_view);
+        $close_view = $close_store->setTimezone($tz_view);
+
+        if ($now_view < $open_view) {
+            $diff = $open_view->getTimestamp() - $now_view->getTimestamp();
+            return '<div class="test">' . esc_html($set) . ' öffnet in ' . $fmt($diff) . ' um ' . $open_view->format('H:i') . ' Uhr.</div>';
+        }
+        if ($now_view >= $open_view && $now_view < $close_view) {
+            $diff = $close_view->getTimestamp() - $now_view->getTimestamp();
+            return '<div class="test">' . esc_html($set) . ' ist offen und schließt in ' . $fmt($diff) . ' um ' . $close_view->format('H:i') . ' Uhr.</div>';
+        }
+    }
+    return '<div class="test">heute geschlossen</div>';
+}
+
+add_shortcode('tl', function ($atts) {
+    $atts = shortcode_atts(['set' => '', 'tz' => ''], $atts, 'tl');
+    if ($atts['set'] === '')
+        return 'Kein Set angegeben. Nutzung: [tl set="webpen"]';
+
+    $uid = 'tl_' . wp_generate_uuid4();
+    ob_start(); ?>
+    <div id="<?php echo esc_attr($uid); ?>" class="ot-today-auto" data-set="<?php echo esc_attr($atts['set']); ?>"
+        data-tz="<?php echo esc_attr($atts['tz']); ?>">
+        <div class="loading">Lade Öffnungszeiten …</div>
+    </div>
+    <?php
+    return ob_get_clean();
+});
 
 
 
