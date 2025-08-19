@@ -13,6 +13,7 @@ add_action('admin_init', function () {
             'sanitize_callback' => 'ot_sanitize_settings',
             'default' => [
                 'time_12h' => 0,
+                'highlight_today' => 0,
             ],
             // optional:
             // 'show_in_rest'   => false,
@@ -42,6 +43,22 @@ add_action('admin_init', function () {
         'opening-times-settings',
         'ot_display'
     );
+
+    add_settings_field(
+        'highlight_today',
+        __('Heute hervorheben', 'opening-times'),
+        function () {
+            $o = get_option('ot_settings', []);
+            ?>
+        <label>
+            <input type="checkbox" name="ot_settings[highlight_today]" value="1" <?php checked(!empty($o['highlight_today'])); ?>>
+            <?php esc_html_e('Heute in der Liste hervorheben', 'opening-times'); ?>
+        </label>
+        <?php
+        },
+        'opening-times-settings',
+        'ot_display'
+    );
 });
 
 
@@ -57,10 +74,38 @@ function ot_field_time_12h()
     <?php
 }
 
+function ot_field_highlight_today()
+{
+    $o = get_option('ot_settings', []);
+    ?>
+    <label>
+        <input type="checkbox" name="ot_settings[highlight_today]" value="1" <?php checked(!empty($o['hightlight_todayy'])); ?>>
+        <?php esc_html_e('Heute in der Liste hervorheben', 'opening-times'); ?>
+    </label>
+    <?php
+}
+
 // 3) Sanitize-Callback
 function ot_sanitize_settings($in)
 {
-    $out = get_option('ot_settings', []);
-    $out['time_12h'] = empty($in['time_12h']) ? 0 : 1;
+    $defaults = [
+        'time_12h' => 0,
+        'highlight_today' => 0,
+    ];
+
+    $in = is_array($in) ? $in : [];
+
+    $out = [];
+
+    $out['time_12h'] = !empty($in['time_12h']) ? 1 : 0;
+    $out['highlight_today'] = !empty($in['highlight_today']) ? 1 : 0;
+
+    $out = array_replace_recursive($defaults, $out);
+
     return $out;
+
 }
+
+
+
+

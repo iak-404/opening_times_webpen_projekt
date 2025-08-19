@@ -67,15 +67,25 @@ function load_opening_times_callback()
                 $todayBackend = $dateObj->format('Y-m-d');
                 $todayFrontend = $dateObj->format('d.m.y');
                 $isVacation = ot_is_vacation_day($todayBackend, $vacation_lookup);
+                $isToday = $dateObj->format('Y-m-d') === $today->format('Y-m-d');
 
+                $opts = get_option('ot_settings', []);
+                $useTdy = !empty($opts['highlight_today']);
                 $isClosed = !empty($data['closed']);
                 $dayTimes = (isset($data['times']) && is_array($data['times'])) ? $data['times'] : [];
+
+
+                $cls = $useTdy && $isToday ? 'daydate today' : 'daydate';
+                $cls_times = $useTdy && $isToday ? 'times today' : 'times';
+
                 ?>
-                <div class="daydate">
-                    <div class="day"><?php echo esc_html($day); ?>:</div>
+                <div class="<?php echo $cls ?>">
+                    <div class="day">
+                        <?php echo esc_html($day);?>:
+                    </div>
                     <div class="date"><?php echo esc_html($todayFrontend); ?></div>
                 </div>
-                <div class="times">
+                <div class="<?php echo $cls_times ?>">
                     <?php
                     if ($isClosed) {
                         echo '<div class="time closed">Closed</div>';
