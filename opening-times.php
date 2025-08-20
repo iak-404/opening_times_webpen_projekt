@@ -50,6 +50,7 @@ final class Opening_Times
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_enqueue_scripts', [$this, 'myplugin_enqueue_styles']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_scripts']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles'], 20);
         add_action('admin_enqueue_scripts', function ($hook) {
             if (isset($_GET['page']) && $_GET['page'] === 'opening-times-create') {
                 wp_enqueue_style(
@@ -79,6 +80,31 @@ final class Opening_Times
                 }
             }
         });
+
+        add_action('wp_enqueue_scripts', function () {
+            // deine gespeicherten Optionen holen
+            $settings = get_option('ot_settings', []);
+            if (empty($settings['highlight_today']['enabled'])) {
+                return; // aus, nix tun
+            }
+
+            $styles = $settings['highlight_today']['styles'] ?? [];
+            $css = '';
+
+            foreach (['font-weight', 'color', 'background-color'] as $prop) {
+                if (!empty($styles[$prop])) {
+                    $css .= $prop . ':' . $styles[$prop] . ';';
+                }
+            }
+
+            if ($css) {
+                // hier 'myplugin-style' durch den Handle deines Stylesheets ersetzen
+                wp_add_inline_style('myplugin-style', ".day-row.today { $css }");
+            }
+
+
+        });
+
 
     }
 
@@ -188,13 +214,26 @@ final class Opening_Times
         include plugin_dir_path(__FILE__) . 'templates/calender.php';
     }
 
-    public function enqueue_admin_styles()
+    public function enqueue_admin_styles($hook)
     {
+        // NUR auf deinen Screens laden
+        $allowed = [
+            'toplevel_page_opening-times',        // Hauptmenü
+            'opening-times_page_opening-times',   // evtl. Overview-Subpage
+            'settings_page_opening-times-settings'// deine Settings-Seite
+        ];
+        if (!in_array($hook, $allowed, true)) {
+            return;
+        }
+
+        // Cache-buster: aktuelle Datei-Änderungszeit
+        $path = plugin_dir_path(__FILE__) . 'assets/css/admin.css';
+
         wp_enqueue_style(
             'opening-times-admin',
             plugin_dir_url(__FILE__) . 'assets/css/admin.css',
             ['dashicons', 'common'],
-            time(),
+            '1.0.1',
             'all'
         );
     }
@@ -205,6 +244,22 @@ final class Opening_Times
         wp_enqueue_script(
             'overview-js',
             plugin_dir_url(__FILE__) . 'assets/js/overview.js',
+            [],
+            '1.0.1',
+            true
+        );
+
+        wp_enqueue_script(
+            'holidays-js',
+            plugin_dir_url(__FILE__) . 'assets/js/holidays.js',
+            [],
+            '1.0.1',
+            true
+        );
+
+        wp_enqueue_script(
+            'settings-js',
+            plugin_dir_url(__FILE__) . 'assets/js/settings.js',
             [],
             '1.0.1',
             true
@@ -245,15 +300,6 @@ final class Opening_Times
 
     public function enqueue_frontend_scripts()
     {
-
-        wp_enqueue_style(
-            'opening-times-shortcode',
-            plugin_dir_url(__FILE__) . 'assets/css/shortcode.css',
-            [],
-            '1.0.0',
-            'all'
-        );
-
         wp_enqueue_script(
             'ot-tz-cookie',
             plugin_dir_url(__FILE__) . 'assets/js/tz-cookie.js',

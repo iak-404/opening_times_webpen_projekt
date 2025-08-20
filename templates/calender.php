@@ -14,6 +14,8 @@ $calendar_events = array_map(function ($absence) {
 wp_localize_script('ot-calender-init', 'otCalendarEvents', $calendar_events);
 ?>
 
+<div id="holiday"></div>
+
 <div class="wrap">
     <h1><?php _e('Kalender', 'opening-times'); ?></h1>
     

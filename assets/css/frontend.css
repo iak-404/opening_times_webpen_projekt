@@ -1,42 +1,84 @@
-
 #wpbody-content {
   display: flex;
   flex-direction: column;
   margin: 2rem 0 0 2rem;
 }
 
+/* Opening Status Shortcode */
+.ot-today-auto {
+  font-size: 1.3rem;
+  text-decoration: none;
+}
+
+.loading {
+  font-weight: bold;
+  color: red;
+}
+
+/* Opening Times Shortcode */
 h2 {
   font-size: 2rem;
   text-decoration: underline;
 }
 
+.opening-times-auto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+}
+
+.opening-times-auto > h2 {
+  margin-top: 0;
+}
+
 .opening-times {
   display: grid;
-  grid-template-columns: 120px 300px;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem 1rem;
   font-size: 1.3rem;
-  align-items: start; /* Damit die Zeiten oben anliegen */
+  align-items: start;
 }
 
 .day-row {
-  display: contents; /* Wrapper auflösen, damit .day und .times Grid-Kinder sind */
+  display: contents;
+}
+
+.day-row.today {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-column: 1 / -1; 
+  background-color: rgba(95, 57, 10, 0.5);
+  column-gap: 1rem; 
+  border-radius: 0.3rem;
 }
 
 .day {
   grid-column: 1;
   font-weight: bold;
-  padding-top: 0.2rem; /* Optional: etwas Abstand nach oben */
+  text-align: left;
+  margin-left: 0.4rem;
+}
+
+.date {
+  grid-column: 1;
+  margin-left: 0.4rem;
+  text-align: left;
 }
 
 .times {
   grid-column: 2;
-  display: block; /* Standard-Block-Layout */
+  display: block;
 }
 
 .time {
-  margin-bottom: 0.3rem; /* Abstand zwischen einzelnen Zeiten */
+  margin-right: 0.4rem;
+  text-align: right;
 }
 
-.times.closed {
+.closed {
+  text-align: center;
+  font-weight: bold;
   color: red;
 }

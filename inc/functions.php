@@ -70,60 +70,62 @@ function load_opening_times_callback()
                 $isToday = $dateObj->format('Y-m-d') === $today->format('Y-m-d');
 
                 $opts = get_option('ot_settings', []);
-                $useTdy = !empty($opts['highlight_today']);
+                $useTdy = !empty($opts['highlight_today']['enabled']);
                 $isClosed = !empty($data['closed']);
                 $dayTimes = (isset($data['times']) && is_array($data['times'])) ? $data['times'] : [];
 
-
-                $cls = $useTdy && $isToday ? 'daydate today' : 'daydate';
-                $cls_times = $useTdy && $isToday ? 'times today' : 'times';
+                $cls = $useTdy && $isToday ? 'day-row today' : 'day-row';
+                $hide = !empty($opts['show_closed']) && $isClosed ? ' style="display:none;"' : '';
 
                 ?>
-                <div class="<?php echo $cls ?>">
-                    <div class="day">
-                        <?php echo esc_html($day);?>:
+                <div class="<?php echo $cls; ?>"<?php echo $hide; ?>>
+                    <div class="<?php echo ('daydate') ?>">
+                        <div class="day">
+                            <?php echo esc_html($day); ?>:
+                        </div>
+                        <div class="date"><?php echo esc_html($todayFrontend); ?></div>
                     </div>
-                    <div class="date"><?php echo esc_html($todayFrontend); ?></div>
-                </div>
-                <div class="<?php echo $cls_times ?>">
-                    <?php
-                    if ($isClosed) {
-                        echo '<div class="time closed">Closed</div>';
-                    } else if ($isVacation) {
-                        echo '<div class="time closed">Vacation</div>';
-                    } else {
-                        if (empty($dayTimes)) {
-                            echo '<div class="time">–</div>';
+                    <div class="<?php echo ('times') ?>">
+                        <?php
+                        if ($isClosed) {
+                            echo '<div class="time closed">Closed</div>';
+                        } else if ($isVacation) {
+                            echo '<div class="time closed">Vacation</div>';
                         } else {
-                            foreach ($dayTimes as $interval) {
-                                $open = isset($interval['open_time']) ? trim($interval['open_time']) : '';
-                                $close = isset($interval['close_time']) ? trim($interval['close_time']) : '';
-                                if ($open === '' && $close === '') {
-                                    continue;
+                            if (empty($dayTimes)) {
+                                echo '<div class="time">–</div>';
+                            } else {
+                                foreach ($dayTimes as $interval) {
+                                    $open = isset($interval['open_time']) ? trim($interval['open_time']) : '';
+                                    $close = isset($interval['close_time']) ? trim($interval['close_time']) : '';
+                                    if ($open === '' && $close === '') {
+                                        continue;
+                                    }
+
+                                    $open_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', $todayBackend . ' ' . $open, $tz_store);
+                                    $close_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', $todayBackend . ' ' . $close, $tz_store);
+                                    if (!$open_store || !$close_store) {
+                                        continue;
+                                    }
+
+                                    if ($close_store <= $open_store) {
+                                        $close_store = $close_store->modify('+1 day');
+                                    }
+
+                                    $opts = get_option('ot_settings', []);
+                                    $use12h = !empty($opts['time_12h']);
+                                    $fmt = $use12h ? 'g:i A' : 'H:i';
+                                    $suffix = $use12h ? '' : ' Uhr';
+
+                                    $open_view = $open_store->setTimezone($tz_view)->format($fmt);
+                                    $close_view = $close_store->setTimezone($tz_view)->format($fmt);
+
+                                    echo '<div class="time">' . esc_html($open_view . ' - ' . $close_view . $suffix) . '</div>';
                                 }
-
-                                $open_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', $todayBackend . ' ' . $open, $tz_store);
-                                $close_store = DateTimeImmutable::createFromFormat('Y-m-d H:i', $todayBackend . ' ' . $close, $tz_store);
-                                if (!$open_store || !$close_store) {
-                                    continue;
-                                }
-
-                                if ($close_store <= $open_store) {
-                                    $close_store = $close_store->modify('+1 day');
-                                }
-
-                                $opts = get_option('ot_settings', []);
-                                $use12h = !empty($opts['time_12h']);
-                                $fmt = $use12h ? 'g:i A' : 'H:i';
-
-                                $open_view = $open_store->setTimezone($tz_view)->format($fmt);
-                                $close_view = $close_store->setTimezone($tz_view)->format($fmt);
-
-                                echo '<div class="time">' . esc_html($open_view . ' - ' . $close_view . ' Uhr') . '</div>';
                             }
                         }
-                    }
-                    ?>
+                        ?>
+                    </div>
                 </div>
                 <?php
             }
@@ -162,7 +164,12 @@ if (!function_exists('ot_fmt_duration')) {
         $mins = intdiv($seconds, 60);
         $h = intdiv($mins, 60);
         $m = $mins % 60;
-        return ($h ? $h . ' Std ' : '') . $m . ' Min';
+        $opts = get_option('ot_settings', []);
+        $use12h = !empty($opts['time_12h']);
+        $hSuffix = $use12h ? ' h ' : ' Std ';
+        $mSuffix = $use12h ? ' m ' : ' Min ';
+
+        return ($h ? $h . $hSuffix : '') . $m . $mSuffix;
     }
 }
 
