@@ -1,7 +1,6 @@
 <?php
 // Daten aus der Datenbank holen
 $absences = get_all_absences();
-
 // Events für JavaScript vorbereiten
 $calendar_events = array_map(function ($absence) {
     return [
@@ -14,7 +13,16 @@ $calendar_events = array_map(function ($absence) {
 wp_localize_script('ot-calender-init', 'otCalendarEvents', $calendar_events);
 ?>
 
-<div id="holiday"></div>
+
+<div >
+    <label for="state"><?php _e('Bundesland:', 'opening-times'); ?></label>
+    <select id="state">
+        
+    </select>
+    <ul id="holiday">
+        
+    </ul>
+</div>
 
 <div class="wrap">
     <h1><?php _e('Kalender', 'opening-times'); ?></h1>
