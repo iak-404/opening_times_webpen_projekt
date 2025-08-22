@@ -18,6 +18,7 @@ require_once plugin_dir_path(__FILE__) . 'inc/admin-ajax.php';
 require_once plugin_dir_path(__FILE__) . 'inc/functions.php';
 require_once plugin_dir_path(__FILE__) . 'inc/settings.php';
 
+
 final class Opening_Times
 {
 
@@ -104,6 +105,45 @@ final class Opening_Times
 
 
         });
+
+        add_action('admin_enqueue_scripts', function () {
+            wp_enqueue_script('holidays-js', plugins_url('assets/js/holidays.js', __FILE__), [], '1.0.0', true);
+
+            $o = get_option('ot_settings', []);
+            $region = $o['holidays_api']['region'] ?? 'nw';
+
+            wp_localize_script('holidays-js', 'otHolidays', ['region' => $region]);
+
+        });
+
+        add_action('admin_enqueue_scripts', function ($hook) {
+            if ($hook !== 'opening-times_page_opening-times-calender')
+                return;
+
+            wp_enqueue_style(
+                'material-symbols',
+                'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded',
+                [],
+                null
+            );
+
+            wp_enqueue_style(
+                'ot-admin-calendar-css',
+                plugins_url('assets/css/admin-calendar.css', __FILE__),
+                [],
+                filemtime(plugin_dir_path(__FILE__) . 'assets/css/admin-calendar.css')
+            );
+
+            wp_enqueue_script(
+                'ot-admin-calendar-js',
+                plugins_url('assets/js/admin-calendar.js', __FILE__),
+                [],             
+                '1.0.0',
+                true          
+            );
+        });
+
+
 
 
     }
@@ -216,17 +256,15 @@ final class Opening_Times
 
     public function enqueue_admin_styles($hook)
     {
-        // NUR auf deinen Screens laden
         $allowed = [
-            'toplevel_page_opening-times',        // Hauptmenü
-            'opening-times_page_opening-times',   // evtl. Overview-Subpage
-            'settings_page_opening-times-settings'// deine Settings-Seite
+            'toplevel_page_opening-times',        
+            'opening-times_page_opening-times',  
+            'settings_page_opening-times-settings'
         ];
         if (!in_array($hook, $allowed, true)) {
             return;
         }
 
-        // Cache-buster: aktuelle Datei-Änderungszeit
         $path = plugin_dir_path(__FILE__) . 'assets/css/admin.css';
 
         wp_enqueue_style(
@@ -272,22 +310,6 @@ final class Opening_Times
         ]);
 
         wp_enqueue_script(
-            'fullcalendar-js',
-            plugin_dir_url(__FILE__) . 'assets/js/fullcalendar.min.js',
-            [],
-            '6.1.8',
-            true
-        );
-
-        wp_enqueue_script(
-            'ot-calender-init',
-            plugin_dir_url(__FILE__) . 'assets/js/admin-calender.js',
-            ['fullcalendar-js'],
-            '1.0',
-            true
-        );
-
-        wp_enqueue_script(
             'create',
             plugin_dir_url(__FILE__) . 'assets/js/create.js',
             [],
@@ -321,6 +343,12 @@ final class Opening_Times
             'nonce' => wp_create_nonce('load_opening_times_nonce'),
             'action' => 'load_opening_times',
         ]);
+
+        wp_localize_script('overview-js', 'OT_Holidays', [
+            'dates' => ot_get_holiday_dates(), 
+            'region' => ot_get_region(),
+        ]);
+
     }
 
 

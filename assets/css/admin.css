@@ -115,7 +115,7 @@ td {
   border-top: 3px double black;
 }
 
-.today-highlights-label {
+.today-highlights-label, .label {
   font-weight: bold;
 }
 .select-font-weight {

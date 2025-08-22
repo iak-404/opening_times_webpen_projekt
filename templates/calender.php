@@ -1,38 +1,25 @@
 <?php
-// Daten aus der Datenbank holen
-$absences = get_all_absences();
-// Events für JavaScript vorbereiten
-$calendar_events = array_map(function ($absence) {
-    return [
-        'title' => $absence['title'],
-        'start' => $absence['start'],
-        'end' => date('Y-m-d', strtotime($absence['end'] . ' +1 day'))
-    ];
-}, $absences);
 
-wp_localize_script('ot-calender-init', 'otCalendarEvents', $calendar_events);
 ?>
+<div class="wrap ot-cal-page">
+  <h1><?php esc_html_e('Calendar', 'opening-times'); ?></h1>
 
+  <div class="calendar-wrapper">
+    <div class="calendar-container">
+      <header class="calendar-header">
+        <p class="calendar-current-date"></p>
+        <div class="calendar-navigation">
+          <span id="calendar-prev" class="material-symbols-rounded">chevron_left</span>
+          <span id="calendar-next" class="material-symbols-rounded">chevron_right</span>
+        </div>
+      </header>
 
-<div >
-    <label for="state"><?php _e('Bundesland:', 'opening-times'); ?></label>
-    <select id="state">
-        
-    </select>
-    <ul id="holiday">
-        
-    </ul>
-</div>
-
-<div class="wrap">
-    <h1><?php _e('Kalender', 'opening-times'); ?></h1>
-    
-    <div style="margin-bottom: 20px; padding: 10px; background: #f0f0f0;">
-
-        <strong>Für JavaScript aufbereitete Events:</strong>
-        <pre><?php print_r($calendar_events); ?></pre>
-        <div id="testCalendar"></div>
+      <div class="calendar-body">
+        <ul class="calendar-weekdays">
+          <li>Sun</li><li>Mon</li><li>Tue</li><li>Wed</li><li>Thu</li><li>Fri</li><li>Sat</li>
+        </ul>
+        <ul class="calendar-dates"></ul>
+      </div>
     </div>
-    
-    <div id="ot_calendar" class="admin_calendar"></div>
+  </div>
 </div>

@@ -21,6 +21,11 @@ add_action('admin_init', function () {
                         'background-color' => '#e6f6e6',
                     ],
                 ],
+                'show_closed' => 0,
+                'holidays_api' => [
+                    'enabled' => 0,
+                    'region' => '',
+                ],
             ],
             // optional:
             // 'show_in_rest'   => false,
@@ -57,6 +62,21 @@ add_action('admin_init', function () {
         'ot_field_show_closed',     // <-- nicht die anonyme Funktion!
         'opening-times-settings',
         'ot_display'
+    );
+
+    add_settings_section(
+        'ot_display_2',
+        __('Feiertage | Urlaub | Ferien', 'opening-times'),
+        '__return_false',
+        'opening-times-settings'
+    );
+
+    add_settings_field(
+        'holidays_api',
+        __('Feiertage aktivieren', 'opening-times'),
+        'ot_field_holidays',     // <-- nicht die anonyme Funktion!
+        'opening-times-settings',
+        'ot_display_2'
     );
 });
 
@@ -101,7 +121,7 @@ function ot_field_highlight_today()
     <label style="display:block; margin-bottom:.5rem;">
         <!-- Hidden erzwingt 0, falls Checkbox nicht gesendet wird -->
         <input type="hidden" name="ot_settings[highlight_today][enabled]" value="0">
-        <input type="checkbox" name="ot_settings[highlight_today][enabled]" value="1" <?php checked($enabled); ?>>
+        <input type="checkbox" name="ot_settings[highlight_today][enabled]" value="1" <? checked($enabled); ?>>
         <?php esc_html_e('Heute in der Liste hervorheben', 'opening-times'); ?>
     </label>
 
@@ -171,6 +191,30 @@ function ot_field_show_closed()
     <?php
 }
 
+function ot_field_holidays()
+{
+    $o = get_option('ot_settings', []);
+    $o = wp_parse_args(get_option('ot_settings', []));
+
+    $enabled = !empty($o['holidays_api']['enabled']);
+    $region = $o['holidays_api']['region'];
+    ?>
+    <label style="display:block; margin-bottom:.5rem;">
+        <!-- Hidden sorgt dafür, dass beim Absenden auch "0" ankommt, wenn die Checkbox aus ist -->
+        <input type="hidden" name="ot_settings[holidays_api][enabled]" value="0">
+        <input type="checkbox" name="ot_settings[holidays_api][enabled]" value="1" <?php checked($enabled); ?>>
+        <?php esc_html_e('Feiertage berücksichtigen', 'opening-times'); ?>
+    </label>
+
+    <div style="padding-left:1.6rem; display:grid; gap:.5rem; max-width:420px;">
+        <label class="label" for="state-settings"><?php esc_html_e('Bundesland', 'opening-times'); ?>:</label>
+        <select id="state-settings" name="ot_settings[holidays_api][region]" value="<?php echo esc_attr($region); ?>">
+
+        </select>
+    </div>
+    <?php
+}
+
 // 3) Sanitize-Callback
 function ot_sanitize_settings($in)
 {
@@ -185,6 +229,10 @@ function ot_sanitize_settings($in)
             ],
         ],
         'show_closed' => 0,
+        'holidays_api' => [
+            'enabled' => 0,
+            'region' => 'nw',
+        ],
     ];
 
     $in = is_array($in) ? $in : [];
@@ -192,6 +240,11 @@ function ot_sanitize_settings($in)
 
     $out['time_12h'] = !empty($in['time_12h']) ? 1 : 0;
     $out['show_closed'] = !empty($in['show_closed']) ? 1 : 0;
+    $out['holidays_api'] = [
+        'enabled' => !empty($in['holidays_api']['enabled']) ? 1 : 0,
+        'region' => isset($in['holidays_api']['region']) ? sanitize_text_field($in['holidays_api']['region']) : '',
+    ];
+
 
     // enabled kommt jetzt IMMER als "0" oder "1" an (wegen hidden input)
     $enabled_in = isset($in['highlight_today']['enabled']) ? (int) $in['highlight_today']['enabled'] : 0;
